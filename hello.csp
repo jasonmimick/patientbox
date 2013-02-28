@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>jQuery Mobile Docs - Basic Lists</title> 
+	<link rel="stylesheet"  href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />  
+
+	<script src="//code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+
+	</head> 
+	<body> 
+
+	<div data-role="page" class="type-interior">
+
+		<div data-role="header" data-theme="f">
+		<h1>Patient Box - Basic List</h1>
+		<a href="../../" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
+		<a href="search.csp" data-icon="search" data-iconpos="notext" data-rel="dialog" data-transition="fade">Search</a>
+		</div><!-- /header -->
+
+		<script language="cache" runat="server">
+		
+	   	Set request=##class(HS.Message.PatientSearchRequest).%New()
+	   	Set request.SearchMode="admin"
+	   	Set request.LastName="" //"Smith"
+	   	Set ns=$namespace
+	   	//zn "hsregistry"
+	   	//Set tSC=##class(Ens.Director).CreateBusinessService("HS.Hub.HSWS.WebServices",.service)
+	   	Set tSC=##class(HS.Viewer.Services).SendSync(request,.response)
+	   	//Set tSC=service.SearchPatients(request,.response)
+	   	//zn ns
+	   	//w response.Results
+	   </script>	
+		<div data-role="content">
+			<div class="content-primary">
+			<ul data-role="listview">
+			<script language="cache" runat="server">
+			for i=1:1:response.Results.Count() {
+				Set item=response.Results.GetAt(i)
+				&html<
+					<li><a href="pd.csp?#(item.MPIID)#">
+					#(item.FirstName)# #(item.LastName)# #(item.MPIID)#
+					</a></li>
+				>
+			}
+		   </script>
+			</ul>
+			</div><!--/content-primary -->		
+		</div>
+		<!-- footer -- navigation -->
+		<div data-role="footer">		
+			<div data-role="navbar" data-iconpos="top">
+				<ul>
+				<li><a href="#" data-icon="alert">Foo Messages</a></li>
+				<li><a href="#" data-icon="grid">Lists</a></li>
+				<li><a href="#" data-icon="search">Search</a></li>
+				<li><a href="#" data-icon="gear">Settings</a></li>
+			</ul>
+			</div><!-- /navbar -->
+		</div><!-- /footer -->
+		<!-- end footer -->
+	</div>
+</html>
+</body>
+</html>

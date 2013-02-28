@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<csp:class abstract="1">
+<html>
+	<script language="cache" runat="server">
+	Set page=%request.Get("p")
+	Set dialog=%request.Get("dialog")
+	Set title="?"
+	If (page="patient") Set title="Patient List"
+	If (page="searchresult") Set title="Search Results"
+	If (page="lists") Set title="My Lists"
+	If (page="settings") Set title="Settings"
+	If (page="messages") Set title="My Messages"
+	Set cn="csp.pb."_page
+	Do ##class(csp.pb.utils).header(title)
+	</script>
+	<body> 
+
+		<script language="cache" runat="server">
+		if ( dialog ) {
+			&html<
+			<div data-role="page" id="pb-main" data-dom-cache="true"><!-- dialog-->
+			 <div data-role="header" data-theme="e">
+			  <h1>Patientbox - #(title)#</h1>
+			 </div><!-- /header -->
+			 <div data-role="content" data-theme="e">
+			  >
+			   Do $classmethod(cn,"content")
+			  &html<
+			 </div>
+			</div>
+	
+			<div data-role="page" id="page-success"><!-- dialog-->
+			>
+		}
+		else {
+			//class="type-interior"
+			&html<
+			<div data-role="page" >
+			<div data-role="header" data-theme="f">
+			>
+			Do ##class(csp.pb.utils).renderHeaderBanner($parameter(cn,"title" ))
+			&html<
+			</div><!-- /header -->
+			
+			<div data-role="content">
+				<div class="content-primary">
+					>	
+					Do $classmethod(cn,"content")
+					&html<
+				</div><!--/content-primary -->		
+			</div>
+			>
+			//<!-- footer -- navigation -->
+			Do ##class(csp.pb.utils).navbar()
+			&html<
+			</div>
+			>
+		}
+		</script>	
+</html>
+</body>
+</html>
+<csp:method name="xxxOnPreHTTP" classmethod="1" returntype="%Boolean">
+if ( %request.Get("logout") ) {
+	Set url=##class(csp.pb.utils).doLogout()
+	Set %response.Redirect=url
+	Quit 0
+}
+Quit 1
+</csp:method>

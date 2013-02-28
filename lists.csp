@@ -1,0 +1,93 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:parameter name="title" value="My Lists"/>
+
+<csp:method name="buildListList" classmethod="1" arguments="listType,listName,.sourceList,.targetList">
+// copy data from source into target
+set props=$lb("Name","DOB","Phone","Gender")
+for i=1:1:sourceList.Members.Count() {
+	set sm=sourceList.Members.GetAt(i)
+	set counter=$i(targetList(listType,listName))
+	Set targetList(listType,listName,counter,"MPIID")=sm.MPIID
+	for pi=1:1:$ll(props) {
+		set prop=$listget(props,pi)
+		set targetList(listType,listName,counter,prop)=sm.Pairs.GetAt(prop)
+	}
+}
+</csp:method>
+
+<csp:method name="content" classmethod="1">
+// see what lists have data...
+kill listList
+set listList("recent")=0
+set listList("programs")=0
+set listList("relationships")=0
+// relationships
+Set rs=##class(%ResultSet).%New("HS.Push.Relationship:ListRelationshipsZ")
+Set sc=rs.Execute()
+While ( rs.Next() ) { Set relationships(rs.Data("Name"))=rs.Data("ID") }
+//zw relationships
+Set n=$Order(relationships(""))
+while ( n'="" ) {
+	set lri("ListType")="relationship",lri("ListId")=relationships(n)
+	Set list=##class(csp.pb.utils).fetchList(.lri)
+	Do ..buildListList("relationships",n,.list,.listList)
+	set n=$order(relationships(n))
+}
+// programs
+Set rs=##class(%ResultSet).%New("HS.Registry.Program:ListProgramsZ")
+Set sc=rs.Execute("Search",$Username)
+While ( rs.Next() ) { Set programs(rs.Data("Name"))=rs.Data("ID") }		
+Set n=$Order(programs(""))
+while ( n'="" ) {
+	set lri("ListType")="program",lri("ListId")=programs(n)
+	Set list=##class(csp.pb.utils).fetchList(.lri)
+	Do ..buildListList("programs",n,.list,.listList)
+	set n=$order(programs(n))
+}
+
+// recent
+kill lri
+set lri("ListType")="recent"
+Set list=##class(csp.pb.utils).fetchList(.lri)
+Do ..buildListList("recent","Recent",.list,.listList)
+//w "<pre>"
+//zw listList
+//w "</pre>"
+//quit
+&html<
+<ul data-role="listview" data-count-theme="c" data-inset="false"> 
+>
+// Recent, Relationships, then Programs
+Do ..renderList("recent","Recent",.listList)
+set lt=$lb("relationships","programs")
+for i=1:1:$ll(lt) {
+	set listType=$listget(lt,i)
+	set listName=$Order( listList(listType,"" ) )
+	while ( listName '= "" ) {
+		Do ..renderList(listType,listName,.listList)
+		set listName=$Order( listList(listType, listName) )
+	}
+}
+//w "</pre>"
+//quit
+&html<
+</ul>
+>
+</csp:method>	
+
+<csp:method name="renderList" classmethod="1" arguments="listType, listName, .list">
+set count=list(listType,listName)
+set ids=""
+// build list of mpiids to see list members (reuse searchresult.csp)
+for ij=1:1:list(listType,listName) {
+ set ids=$g(ids)_list(listType,listName,ij,"MPIID")_","
+}
+set ids=$p(ids,",",1,$l(ids,",")-1)
+set bcc="ui-li-count iu-btn-up-c ui-btn-cornder-all"
+&html<
+ <li><a data-transition="slide"
+	href="template.csp?p=searchresult&search=#(ids)#">#(listName)#
+<span class="#(bcc)#">#(count)#</span>
+</a></li>
+>
+</csp:method>	

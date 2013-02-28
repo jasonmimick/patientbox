@@ -1,0 +1,59 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:parameter name="title" value="Search Results"/>
+<csp:method name="content" classmethod="1">
+set q=%request.Get("search")
+Set MPIIDSearch=0,mpiidList=$lb()
+// this is a hack - I can't find how to get the seach API to filter on an MPIID list
+if ( (q'="") && ($p(q,",") ? .N) ) { 
+	set MPIIDSearch=1 
+	set mpiidList = $listfromstring(q)
+}
+Set results=##class(csp.pb.utils).search(q)
+&html<
+<ul data-role="listview" data-theme="a" data-divider-theme="a" data-filter="true" data-filter-theme="a" data-filter-placeholder="Filter Results...">
+>
+for i=1:1:results.Results.Count() {
+	set itypesS=""
+	kill itypes
+	Set item=results.Results.GetAt(i)
+	if ( MPIIDSearch ) {
+	  if ( mpiidList '[ item.MPIID ) {
+		continue
+	  }
+        }
+	//zw item
+	Set infoTypes=item.InfoTypes
+	For j=1:1:$length(infoTypes,",") {
+		Set itypes($p($p(infoTypes,",",j),".",1))=""
+	}
+	set it=$order(itypes(""))
+	while( it'="" ) { set itypesS=$g(itypesS)_" "_it,it=$order(itypes(it)) }
+	set itypesS=$e(itypesS,2,$l(itypesS))
+	Do ##class(csp.pb.searchresult).renderResult(item,itypesS,i)
+}
+
+
+
+&html<
+</ul>
+>
+
+</csp:method>
+<csp:method name="renderResult" classmethod="1" arguments="item,itypesS,i">
+&html< 
+ <li data-filtertext="#(item.FirstName)# #(item.LastName)#">
+ <a href="template.csp?p=patient&MPIID=#(item.MPIID)#&MRN=#(item.MRN)#&Gateway=#(item.Gateway)#&sri=#(i)#"
+    data-transition="flip" data-inline="true">
+<h3>#(item.FirstName)# #(item.LastName)# <strong>#(item.MRN)# - #(item.MPIID)#</strong></h3>
+ <p>#(item.Street)# #(item.City)#, #(item.State)# #(item.Zip)#			
+ <p class="ui-li-aside">
+#(itypesS)#
+>
+//w "itypesS='"_itypesS_"'"
+//Do ##class(csp.pb.utils).renderInfoTypeImages(itypesS)
+ &html<
+ </p>
+ </a>
+ </li>
+>
+</csp:method>

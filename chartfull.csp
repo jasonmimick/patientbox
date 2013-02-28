@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<csp:method name="renderChartData" classmethod="1">
+set ci=%request.Get("ci")
+set ct=%request.Get("ct")
+//set ci=1,ct="Respiratory Rate"  ///"Height"	// testing
+if ( '$data(^patientbox.chartdata(ci,ct) ) ) {
+ quit "[[]]"  // no data
+}
+set w = ^patientbox.chartdata(ci,ct) 
+s o="[["
+for i=1:1:$ll(w) { s o=o_"["_$listtostring($lg(w,i))_"]" if ( i<$ll(w) ) { s o=o_"," } }
+s o=o_"]]"
+quit o
+</csp:method>
+<csp:method name="getChartLineColor" classmethod="1">
+//set ci=%request.Get("ci")
+set ci=$r(4)+1
+set colors=$lb("#990033","#669966","#FFFF00","#336699")
+quit """"_$lg(colors,ci)_""""
+</csp:method>
+<script language="cache" runat="server">
+set jqMobVer="1.3.0-rc.1" // "1.2.0"
+set jqVer="1.9.1" // "1.7.1"
+set title="Chart demo"
+</script>
+<html>
+<!--
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>Patientbox - #(title)#</title> 
+	<link rel="stylesheet"
+              href="http://code.jquery.com/mobile/#(jqMobVer)#/jquery.mobile-#(jqMobVer)#.min.css" />  
+
+	<script src="http://code.jquery.com/jquery-#(jqVer)#.min.js"></script>
+	<script src="http://code.jquery.com/mobile/#(jqMobVer)#/jquery.mobile-#(jqMobVer)#.min.js"></script>
+
+	<script language="javascript" type="text/javascript" src="jqplot/jquery.jqplot.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="jqplot/jquery.jqplot.css" />
+
+	<script type="text/javascript" src="jqplot/plugins/jqplot.canvasTextRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot/plugins/jqplot.dateAxisRenderer.min.js"></script>
+</head>
+-->
+<body>
+<div id="chartdiv" style="height:400px;width:600px; "></div>
+
+<script type="text/javascript">
+//$.jqplot('chartdiv',  [[[1, 2],[3,5.12],[5,13.1],[7,33.6],[9,85.9],[11,219.9]]],
+$.jqplot('chartdiv',  #(..renderChartData())#,
+{ title:'#(%request.Get("ct"))#',
+  axes:{xaxis:{renderer:$.jqplot.DateAxisRenderer}},
+  series:[{lineWidth:3, markerOptions:{style:'square'}}],
+  seriesColors:[#(..getChartLineColor())#]
+  }
+);
+</script>
+
+</body>
+</html>

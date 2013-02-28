@@ -1,0 +1,97 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:parameter name="title" value="My Messages"/>
+
+<csp:method name="content" classmethod="1">
+Set msgId=%request.Get("msgId")
+If ( msgId'="" ) {
+	Set fn=%request.Get("fn")
+	Do ..renderMessage(fn,msgId)
+	Quit
+}
+// else - just render folder list with counts
+Do ##class(csp.pb.utils).getFolderListWithCounts(.folders)
+&html<
+<ul data-role="listview" data-count-theme="c" data-inset="false"> 
+>
+Set fn=%request.Get("folder")
+If ( fn'="" ) {
+	Do ..renderFolder(fn,.folders)
+	Quit
+}
+//w "<pre>"
+//zw folders
+//w "</pre>"
+Set folderName=$Order(folders(""))
+set bcc="ui-li-count iu-btn-up-c ui-btn-cornder-all"
+While ( folderName'="" ) {
+	Set count=$G(folders(folderName,"msgs"),0)
+	&html<
+	<li>
+	<a data-transition="slide"
+	   href="template.csp?p=messages&folder=#(folderName)#">
+	#(folderName)#
+	<span class="#(bcc)#">#(count)#</span>
+	</a></li>
+	>
+	Set folderName=$Order(folders(folderName))
+}
+&html<
+</ul>
+>
+</csp:method>	
+<csp:method name="renderFolder" arguments="folderName,.folders" classmethod="1">
+//w "renderFolder folderName=",folderName,!
+//zw folders
+&html<<a href="template.csp?p=messages" data-role="button" data-theme="b" data-icon="arrow-l" data-inline="true">Mailboxes</a>#(folderName)#>
+if ($get(folders(folderName,"msgs"),0)=0) {
+    // no messages in this folder
+    &html<<h3>#(folderName)# is empty!</h3>>
+    quit
+}
+for im=1:1:folders(folderName,"msgs") {
+	Kill msgData
+	Merge msgData=folders(folderName,"msgs",im)
+	Merge ^patientbox.msgs(msgData("ID"))=msgData
+	&html<	
+	<li>
+	<a data-transition="slide" 
+           href="template.csp?p=messages&msgId=#(msgData("ID"))#&fn=#(folderName)#">
+	>
+	if ( msgData("UnRead") ) { &html<!> }
+	&html<
+	<h3>#(msgData("ReceivedFrom"))#</h3>
+	<p>Patient:<strong>#(msgData("PatientName"))#</strong></p>
+	<p>#(msgData("Subject"))#</p>
+	<p class="ui-li-aside" style="color:#0080FF">#(msgData("Received"))#</p>
+	</a>
+	</li>
+	>
+}
+</csp:method>
+<csp:method name="renderMessage" arguments="fn,msgId" classmethod="1">
+Set msg=##class(csp.pb.utils).getMessage(msgId)
+//w "<pre>"
+//zw msg
+//s sub=msg.Subscription
+//zw sub
+//w "</pre>"
+&html<
+<a href="template.csp?p=messages&folder=#(fn)#" data-role="button" data-theme="e" data-icon="arrow-l" data-inline="true">#(fn)#</a>
+<br/>
+From: #(msg.SenderName)#<br/>
+To: #(msg.ToList)#<br/>
+<p><strong>#(^patientbox.msgs(msgId,"Subject"))#</strong></p>
+<p>#(^patientbox.msgs(msgId,"Received"))#</p>
+<p>Patient:
+<a data-transition="slide"
+	href="template.csp?p=searchresult&search=#(^patientbox.msgs(msgId,"LastMPIID"))#">
+#(^patientbox.msgs(msgId,"PatientName"))#
+</a>
+</p>
+
+<iframe id="iframe_46" height="480" width="1000px" scrolling="auto" 
+ frameBorder="0"
+ src="HS.UI.Push.FetchAttachmentUtil.cls?attachment=SecureMessage%5E&amp;mime=text/html&amp;registryDoc=#(msgId)#"></iframe>
+>
+</csp:method>
+

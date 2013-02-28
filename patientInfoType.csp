@@ -1,0 +1,138 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:parameter name="title" value="Patient Detail"/>
+<csp:method name="pagejs" classmethod="1">
+&js<
+<script type="text/javascript">
+// jquery mobile says to bind to this 'pageinit', but it does not fire for me
+//$("#pb-main").on('pageinit', function() {
+console.log(' running ');
+//    console.dir( $( ".cars") );
+    $( ".cars" ).on( "click", function() {
+	//alert("click!");
+        var target = $( this ),
+            brand = target.find( "h2" ).html(),
+            model = target.find( "p" ).html(),
+            short = target.attr( "id" ),
+	    imgsrc = target.find( "img" ).attr( "src" )
+            closebtn = '<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" data-shadow="false" data-iconshadow="false" class="ui-btn-right">Close</a>',
+            header = '<div data-role="header"><h2>' + brand + ' ' + model + '</h2></div>',
+            /*img = '<img src="../../_assets/img/' + short + '.jpg" alt="' + brand + '" class="photo">',*/
+            img = '<img src="'+imgsrc+'" alt="' + brand + '" class="photo">',
+            popup = '<div data-role="popup" id="popup-' + short + '" data-short="' + short +'" data-theme="none" data-overlay-theme="a" data-corners="false" data-tolerance="15">' + closebtn + header + img + '</div>';
+
+        // Create the popup. Trigger "pagecreate" instead of "create" because currently the framework doesn't bind the enhancement of toolbars to the "create" event (js/widgets/page.sections.js).
+        $.mobile.activePage.append( popup ).trigger( "pagecreate" );
+        // Wait with opening the popup until the popup image has been loaded in the DOM.
+        // This ensures the popup gets the correct size and position
+        $( ".photo", "#popup-" + short ).load(function() {
+            var height = $( this ).height(),
+                width = $( this ).width();
+            // Set height and width attribute of the image
+            $( this ).attr({ "height": height, "width": width });
+            // Open the popup
+            $( "#popup-" + short ).popup( "open" );
+            // Clear the fallback
+            clearTimeout( fallback );
+        });
+        // Fallback in case the browser doesn't fire a load event
+        var fallback = setTimeout(function() {
+            $( "#popup-" + short ).popup( "open" );
+        }, 2000);
+    });
+    // Set a max-height to make large images shrink to fit the screen.
+    $( document ).on( "popupbeforeposition", ".ui-popup", function() {
+        // 68px: 2 * 15px for top/bottom tolerance, 38px for the header.
+        var maxHeight = $( window ).height() - 68 + "px";
+        $( "img.photo", this ).css( "max-height", maxHeight );
+    });
+    // Remove the popup after it has been closed to manage DOM size
+    $( document ).on( "popupafterclose", ".ui-popup", function() {
+        $( this ).remove();
+    });
+//});
+</script>
+>
+</csp:method>
+<csp:method name="content" classmethod="1">
+//do ..pagejs()
+&html<
+<div id="pb-main" data-theme="b" data-content-theme="d" data-inset="false">
+>
+Set itypeToShow=%request.Get("itype")
+Set itptr=%request.Get("itptr")
+Merge itypes=^patientbox("infoTypes",itptr)  // store off for detail page
+Merge info=^patientbox("info",itptr)  // store off for detail page
+//do ##class(csp.pb.utils).pbd(.itypes) quit
+Set itype="Patient"
+Set sdaIds = itypes(itype)
+Set sc=##class(HS.SDA3.Container).LoadSDAObject($lg(sdaIds,1),.sda)
+// patient header --
+set purl="template.csp?p=patient&MPIID="_info("MPIID")_"&MRN="_info("MRN")_"&Gateway="_info("Gateway")_"&sri="_info("SearchResultItem")
+set name=sda.Name.GivenName_" "_sda.Name.MiddleName_" "_sda.Name.FamilyName
+&html<
+<h3 style="padding:4px" class="ui-body-e">
+<a data-role="button" data-theme="b" data-icon="arrow-l" data-inline="true"
+   href="#(purl)#">
+#(sda.Name.GivenName)# #(sda.Name.MiddleName)# #(sda.Name.FamilyName)#
+</a>
+<span class="text-align:right">#($piece(sda.BirthTime," ",1))# #(sda.Gender.Description)#</span> 
+</h3>
+
+>
+if ( sda.Addresses.Count() > 0 ) {
+	Set addr=sda.Addresses.GetAt(1)
+	&html<
+	<p> #(addr.Street)# <br/> 
+	    #(addr.City.Code)#,#(addr.State.Code)# #(addr.Zip.Code)#
+	</p>
+	>
+}
+&html< <p> >
+for pni=1:1:sda.PatientNumbers.Count() {
+	set pn=sda.PatientNumbers.GetAt(pni)
+	&html< #(pn.NumberType)#:#(pn.Organization.Code)# #(pn.Number)# <br/> >
+}
+&html< </p> >
+
+// end patient header --
+do ##class(csp.pb.utils).getInfoTypeImageInfo(.itInfo)
+Set itype=itypeToShow
+&html<
+<div data-theme="f">
+<h3>
+>
+if ( $data(itInfo(itype) ) ) {
+	set display=itInfo(itype,"alt")
+	set imgurl=itInfo(itype,"url")
+} else {
+	set display=itype
+	set imgurl=""
+}
+if ( imgurl'="" ) {
+	&html<<img style="margin-left:4px;margin-top:4px" 
+		   src="#(itInfo(itype,"url"))#" alt="#(itInfo(itype,"alt"))#" class="ul-li-icon ul-li-thumb">>
+}
+&html<
+#(display)# (#($ll(itypes(itype)))#)</h3>
+</div>
+<ul data-role="listview" data-count-theme="c" data-inset="false"> 
+>
+set bcc="ui-li-count iu-btn-up-c ui-btn-cornder-all"
+set sdaIds = itypes(itype)
+if ( itype="Observation" ) {
+ Do ##class(csp.pb.utils).infoTypeHTMLObservation(sdaIds,name)
+ set itype=$Order(itypes(itype))
+} else {	// observations - special one big table
+ for ii=1:1:$ll(sdaIds) {
+  set sc=##class(HS.SDA3.Container).LoadSDAObject($lg(sdaIds,ii),.sdao)
+  Do ##class(csp.pb.utils).infoTypeHTML(itype,sdao)
+ }
+}
+&html<
+</ul>
+</div>
+>
+do ..pagejs()
+
+</csp:method>
+

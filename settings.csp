@@ -1,0 +1,28 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:parameter name="title" value="Settings"/>
+<csp:method name="content" classmethod="1">
+&html<
+<div class="ui-body ui-body-e"> 
+<h4>Demonstration Mobile HealthShare Application</h4>
+<p>This system is meant for demonstration purposes only. All data
+is synthesized and does not represent actual people or medical
+information.
+</p>
+</div>
+
+<div class="ui-body ui-body-a"> 
+<p>Current Clinician: #($Username)#</p>
+<p>System Info: #($ZV)#</p>
+<p>Patientbox Version: #($G(^patientbox.version,"ALPHA"))#</p>
+</div>
+
+
+<div class="ui-body ui-body-b">
+<p>For more information contact <a href="mailto:jason.mimick@intersystem.com?subject=Patientbox">
+Jason Mimick</a>.
+</p>
+</div>
+>
+
+&html<<div class="pb-footer"> Patientbox &copy; 2013 <a href="http://www.intersystems.com">InterSystems</a></div>>
+</csp:method>

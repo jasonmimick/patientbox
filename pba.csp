@@ -1,0 +1,48 @@
+<csp:class name="csp.pb.utils">
+<csp:parameter name="CONTENTTYPE" value="application/json">
+<csp:method name="OnPreHTTP" classmethod="1" ReturnType="%Library.Boolean">
+Set %response.ContentType="application/json"
+// TODO: support XML content too?
+Quit $$$OK
+</csp:method>
+<csp:method name="Output" classmethod="1" arguments="Data">
+W Data,!
+</csp:method>
+<csp:method name="JsonException" classmethod="1" arguments=".e">
+Quit "{ ERROR : """_e.GetErrorText()_"""}"
+</csp:method>
+<csp:method name="DebugRequest" classmethod="1" >
+Set key=$Order(%request.Data(""))
+Set json="{"
+While ( key'="" ) {
+	Set numKey=$Order(%request.Data(key,"a"),-1)
+  	If ( numKey > 1 ) {
+		Set:json'="{" json=json_", "
+		Set json=json_""""_key_""" : ["
+		For i=1:1:numKey {
+			Set value=%request.Data(key,i)
+			Set json=json_""""_value_""", "
+		}
+		Set json=$e(json,1,$l(json)-2)
+		Set json=json_"]"
+	} Else {
+		set json=json_", """_key_""":"""_%request.Data(key,1)_""""
+	}
+	Set key=$Order(%request.Data(key))
+}
+Set json=json_"}"
+Quit json
+</csp:method>
+<script language="cache" runat="server">
+Try {
+ Set f=%request.Get("f","")
+ If ( f="" ) {
+  Set json="{ ERROR : ""No function found in request"" }"
+  Do ..Output(json)
+  Quit
+ }
+ Do ..Output(..DebugRequest())
+} catch (Exception) {
+ Do ..Output(..JsonException(.Exception))
+}
+</script>

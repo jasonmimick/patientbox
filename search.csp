@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<script language="cache" runat="server">
+Do ##class(csp.pb.utils).header("Search")
+</script>
+<!--
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Patientbox - Search</title>
+	
+	<link rel="stylesheet"  href="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.css" />  
+
+	<script src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
+	<script src="http://code.jquery.com/mobile/1.2.0/jquery.mobile-1.2.0.min.js"></script>
+
+	<script type="text/javascript" src="jqplot/plugins/jqplot.canvasTextRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot/plugins/jqplot.dateAxisRenderer.min.js"></script>
+
+
+	
+</head> 
+-->
+<body> 
+	<div data-role="page" data-theme="a" class="nav-search">
+		
+	<div data-role="content">   
+
+	<style>
+
+		.nav-search .ui-content {
+			margin-top:16px;
+		}
+		.nav-search .ui-corner-top {
+			-moz-border-radius: 0;
+			-webkit-border-radius: 0;
+			border-radius: 0;
+		}
+		.nav-search .ui-bar-a {
+			background-image:none;
+			background-color:#555;
+		}
+		.nav-search .ui-btn-up-a {
+			background-image:none;
+			background-color:#333333;
+		}
+		.nav-search .ui-btn-inner {
+			border-top: 1px solid #888;
+			border-color: rgba(255, 255, 255, .1);
+		}
+	</style>
+	
+	<script language="javascript">
+		$('body').delegate('.nav-search', 'pageshow', function( e ) {
+			$('.ui-input-text').attr("autofocus", true)
+		});			
+	</script>
+	<script language="cache" runat="server">
+	Do ##class(csp.pb.utils).renderHeaderBanner("Search",1)
+	</script>
+
+
+<!-- collapable form with search fields -->
+<form action="template.csp?p=searchresult&dialog=0" 
+	data-transition="flip" data-rel="dialog" data-inline="true"
+	method="get" class="ui-body ui-body-a ui-corner-all">
+	<fieldset>
+	<div data-role="fieldcontain">
+		<label for="search-basic">Search Patientbox:</label>
+		<input type="search" name="search" id="search-basic" value="" />
+	</div>
+	<button type="submit" data-theme="b" name="submit" value="submit-value"
+		data-rel="dialog" data-transition="flip" data-inline="true">Search</button>
+	</fieldset>
+</form>
+</div>
+<script language="cache" runat="server">
+ Do ##class(csp.pb.utils).navbar()
+</script>
+</div><!-- /page -->
+</body>
+</html>
+
+<csp:method name="xxxOnPreHTTP" classmethod="1" returntype="%Boolean">
+if ( %request.Get("logout") ) {
+	Set url=##class(csp.pb.utils).doLogout()
+	Set %response.Redirect=url
+	Quit 0
+}
+Quit 1
+</csp:method>

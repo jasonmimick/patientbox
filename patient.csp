@@ -1,0 +1,120 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:parameter name="title" value="Patient Detail"/>
+<csp:method name="content" classmethod="1">
+Set mpiid=%request.Get("MPIID")
+Set mrn=%request.Get("MRN")
+Set gateway=%request.Get("Gateway")
+Set info("MPIID")=mpiid,info("MRN")=mrn,info("Gateway")=gateway
+Set info("SearchResultItem")=%request.Get("sri")
+Set pinfo=##class(csp.pb.utils).getPatientData(.info)
+//w "<pre>"
+//zw pinfo
+//w "</pre>"
+Set fetchSeq="T"_pinfo.Sequence
+set ^foo.fetchSeq($ZTS)=fetchSeq
+&SQL(SELECT ID INTO :tID FROM HS_SDA3_Streamlet.Abstract WHERE AggregationKey=:fetchSeq AND StreamletType='PATIENT' And Deleted=0) 
+If SQLCODE'=0 {
+	//Set tSC=$$$ERROR($$$GeneralError,$$$Text("Patient not found.")) 
+	//Do $system.OBJ.DisplayError(tSC)	
+	w "sql error",!
+	Quit
+}
+//Set tSC=##class(HS.SDA3.Container).MakeSDAStream("T"_fetchSeq,.ts)
+//Do ts.OutputToDevice()
+Set sc=##class(HS.SDA3.Container).LoadSDAObject(tID,.sda)
+Do $system.OBJ.DisplayError(sc)
+//Set sda=##class(HS.SDA3.Container).%New(fetchSeq)
+/*
+This sql will find the types of streamlets that we have
+select Id,AggregationKey,StreamletType from HS_SDA3_Streamlet.Abstract WHERE AggregationKey=
+for each type, we can generate a "header" list
+then for each get the sda and we can iterate over the entries.
+*/
+set rs=##class(%ResultSet).%New()
+set sc=rs.Prepare("select ID,StreamletType from HS_SDA3_Streamlet.Abstract where AggregationKey=?")
+if $$$ISERR(sc) do $system.OBJ.DisplayError(sc)
+set sc=rs.Execute(fetchSeq)
+if $$$ISERR(sc) do $system.OBJ.DisplayError(sc)
+// organize by StreamletType
+ while ( rs.Next() ) {
+  set st=rs.Get("StreamletType")
+  set stid=rs.Get("ID")
+  set itypes(st)=$g(itypes(st))_$lb(stid)
+ }
+&html<
+<div data-theme="b" data-content-theme="d" data-inset="false">
+>
+
+Set itptr=$i(^patientbox("infoTypes"))
+Merge ^patientbox("infoTypes",itptr)=itypes  // store off for detail page
+Merge ^patientbox("info",itptr)=info
+Set itype="Patient"
+Set sdaIds = itypes(itype)
+Set sc=##class(HS.SDA3.Container).LoadSDAObject($lg(sdaIds,1),.sda)
+// patient header --
+
+&html<
+<h3 style="padding:4px" class="ui-body-e">#(sda.Name.GivenName)# #(sda.Name.MiddleName)# #(sda.Name.FamilyName)#
+<span class="text-align:right">#($piece(sda.BirthTime," ",1))# #(sda.Gender.Description)#</span> 
+</h3>
+>
+if ( sda.Addresses.Count() > 0 ) {
+	Set addr=sda.Addresses.GetAt(1)
+	&html<
+	<p> #(addr.Street)# <br/> 
+	    #(addr.City.Code)#,#(addr.State.Code)# #(addr.Zip.Code)#
+	</p>
+	>
+}
+&html< <p> >
+for pni=1:1:sda.PatientNumbers.Count() {
+	set pn=sda.PatientNumbers.GetAt(pni)
+	&html< #(pn.NumberType)# #(pn.Organization.Code)# #(pn.Number)# <br/> >
+}
+&html< </p> >
+
+// end patient header --
+//do ##class(csp.pb.utils).pbd(.itypes)
+//quit
+&html<
+<ul data-role="listview" data-count-theme="c" data-inset="false"> 
+>
+set bcc="ui-li-count iu-btn-up-c ui-btn-cornder-all"
+do ##class(csp.pb.utils).getInfoTypeImageInfo(.itInfo)
+Set itype=$order(itypes(""))
+while ( itype'="" ) {
+	if ( itype="Patient" ) {
+		set itype=$order(itypes(itype))
+		continue
+	}
+	set sdaIds = itypes(itype)
+	if ( $data(itInfo(itype) ) ) {
+		set display=itInfo(itype,"alt")
+		set imgurl=itInfo(itype,"url")
+	} else {
+		set display=itype
+		set imgurl=""
+	}
+	&html<
+ 	<li>
+	     <a data-transition="slide"
+		href="template.csp?p=patientinfotype&itype=#(itype)#&itptr=#(itptr)#">
+		>
+		if ( imgurl'="" ) {
+		  &html<<img style="margin-left:4px;margin-top:4px" 
+			 src="#(itInfo(itype,"url"))#" alt="#(itInfo(itype,"alt"))#" class="ul-li-icon ul-li-thumb">>
+		}
+		w display
+		&html<<span class="#(bcc)#">#($ll(sdaIds))#</span>
+	     </a>
+	</li>			
+	>
+	set itype=$order(itypes(itype))
+
+}
+&html<
+</ul>
+</div>
+>
+</csp:method>
+

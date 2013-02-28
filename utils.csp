@@ -1,0 +1,618 @@
+<csp:class name="csp.pb.utils">
+<csp:method name="pbd" classmethod="1" arguments=".variable">
+w "<pre>"
+zw variable
+w "</pre>"
+</csp:method>
+<csp:method name="header" classmethod="1" arguments="title" returntype="">
+set jqMobVer="1.3.0-rc.1" // "1.2.0"
+set jqVer="1.9.1" // "1.7.1"
+//set %session.Preserve=1
+&html<
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<title>Patientbox - #(title)#</title> 
+	<link rel="stylesheet"
+              href="http://code.jquery.com/mobile/#(jqMobVer)#/jquery.mobile-#(jqMobVer)#.min.css" />  
+
+	<script src="http://code.jquery.com/jquery-#(jqVer)#.min.js"></script>
+	<script src="http://code.jquery.com/mobile/#(jqMobVer)#/jquery.mobile-#(jqMobVer)#.min.js"></script>
+	<script language="javascript" type="text/javascript" src="jqplot/jquery.jqplot.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="jqplot/jquery.jqplot.css" />
+
+	<script type="text/javascript" src="jqplot/plugins/jqplot.canvasTextRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot/plugins/jqplot.canvasAxisLabelRenderer.min.js"></script>
+	<script type="text/javascript" src="jqplot/plugins/jqplot.dateAxisRenderer.min.js"></script>
+
+>
+&html<
+<style>
+table { width:100%; border-collapse: separate; border-spacing: 2px;border-color: gray;}
+table caption { text-align:left;  }
+table thead th { text-align:left; border-bottom-width:1px; border-top-width:1px; }
+table th, td { text-align:left; padding:6px; border-top: 1px solid #ccc;} 
+.circle{
+ width: 18px;
+ height: 18px;
+ border-radius: 50%;
+ background-color: blue
+  }
+</style>
+>
+Do ##class(csp.pb.utils).style()
+&html<</head>>
+</csp:method>
+
+<csp:method name="renderHeaderBanner" classmethod="1" arguments="title,dontShowHome">
+if ( $g(dontShowHome)="" ) { set dontShowHome=0 }
+set dontShowHome=1
+if ( 'dontShowHome ) {
+	&html<
+	<a href="search.csp" data-icon="home" data-iconpos="notext" data-direction="reverse">Home</a>
+	>
+}
+&html<<h3>Patientbox - #( title )#</h3>>
+</csp:method>
+
+<csp:method name="doLogout" classmethod="1">
+	// Logout removes the security context from the session and cleans up login and security token cookies.
+	// It calls OnLogout() and leaves the session in existence. 
+	Do %session.Logout()
+	// Causes OnEndSession() to be called and the session is destroyed
+	Set %session.EndSession=1
+	// The following code is copied from %CSP.Util.SMTitlePane.
+	Set link2 = $P(##class(%CSP.Page).Link("/csp/sys/%CSP.Portal.Home.cls"),"?",1)
+	Set link1 = $ZCVT($$LoginPage^%SYS.cspServer(link2),"O","URL")
+	Set logXURL = link1_"?LOGOUT=1&Error:URL="_link2_"&CharSet="_##class(%CSP.Page).EscapeURL(%response.CharSet)
+	Set logXURL="%ZHSLIB.UserLogin.cls"
+	Quit logXURL
+</csp:method>
+<csp:method name="style" classmethod="1">
+&html<<style type="text/css">
+.pb-footer {
+	text-align: center;
+	margin-top: 4px;
+}
+</style>>
+</csp:method>
+<csp:method name="navbar" classmethod="1" arguments="title" returntype="">
+&html<<div data-role="footer"  data-position="fixed">		
+			<div data-role="navbar" data-iconpos="top">
+			<ul>
+				<li><a href="template.csp?p=messages" data-icon="info">Messages</a></li>
+				<li><a href="template.csp?p=lists" data-icon="grid">Lists</a></li>
+				<li><a href="search.csp" data-icon="search">Search</a></li>
+				<li><a href="template.csp?p=settings" data-icon="gear">Settings</a></li>
+				
+			</ul>
+			</div>>
+		//Do ##class(csp.pb.utils).footer()
+		&html<</div>>
+		
+</csp:method>
+
+<csp:method name="footer" classmethod="1" arguments="title" returntype="">
+&html<<div class="pb-footer"> Patientbox &copy; 2013 <a href="http://www.intersystems.com">InterSystems</a></div>>
+</csp:method>
+<csp:method name="getInfoTypeImageInfo" classmethod="1" arguments=".d">
+set dir="/csp/hslib/images/"  //"../../web/images/webemr/"
+set d("Allergy","url")=dir_"patient_alert.png"
+set d("Allergy","alt")="Allergies"
+Set d("Document","url")=dir_"insurance.png"
+Set d("Document","alt")="Documents"
+set d("Diagnosis","url")=dir_"dr25.png"
+set d("Diagnosis","alt")="Diagnosis"
+set d("LabOrder","url")=dir_"lab_info.png"
+set d("LabOrder","alt")="Lab Results"
+set d("Medication","url")=dir_"pill_red.png"
+set d("Medication","alt")="Medications"
+set d("Observation","url")=dir_"medical_planner.png"
+set d("Observation","alt")="Physical Exams"
+
+</csp:method>
+<csp:method name="renderInfoTypeImages" classmethod="1" arguments="infotypes">
+set d("ALG")="patient_alert.png"
+Set d("DOC")="insurance.png"
+set d("DXG")="dr25.png"
+set d("LAB")="lab_info.png"
+set d("MED")="pill_red.png"
+set d("OBS")="medical_planner.png"
+	for i=1:1:$l(infotypes," ") {
+  		set it=$p(infotypes," ",i)
+		//w it,":",dir_$g(d(it)),!
+		if ( $data( d(it) ) ) { 
+		&html<
+		<!--
+		<img src="#(dir_d(it))#" width="18" height="16" alt="#(it)#" title="#(it)#"></img>
+		-->
+		<!--
+		<a href="#(dir_d(it))#">#(dir_d(it))#</a>
+		-->
+		>
+  		}
+	}
+/**/
+</csp:method>
+
+<csp:method name="fetchListTest" classmethod="1">
+For lid=1:1:2 {
+	Set lri("ListType")="program"
+	Set lri("ListId")=lid
+	Set list=##class(csp.pb.utils).fetchList(.lri)
+	zw lri
+	Do ..dumpList(list)
+}
+For lid=1:1:3 {
+	Set lri("ListType")="relationship"
+	Set lri("ListId")=lid
+	Set list=##class(csp.pb.utils).fetchList(.lri)
+	zw lri
+	Do ..dumpList(list)
+}
+Set lri("ListType")="mylist"
+Kill lri("ListId")
+Set list=##class(csp.pb.utils).fetchList(.lri)
+zw lri
+Do ..dumpList(list)
+</csp:method>
+<csp:method name="dumpList" classmethod="1" arguments=".list">
+
+for i=1:1:list.Members.Count() {
+	set member=list.Members.GetAt(i)
+	w member.MPIID," ",member.Pairs.GetAt("Name"),!
+}
+for i=1:1:20 w "-"
+w !
+</csp:method>
+<csp:method name="fetchList" classmethod="1" arguments=".listReqInfo" >
+Set request=##class(HS.Message.PatientListRequest).%New()
+Set request.ListType=$G(listReqInfo("ListType"))
+Set request.ListId=$G(listReqInfo("ListId"))
+set userID=" "_$zconvert($Username,"U")
+
+//Set uid=$Order(^["hsregistry"]HS.Registry.Person.UserI("UserID",userID,""))
+Set uid=##class(csp.pb.utils).getClinicianId()
+If ( uid="" ) {
+	Set uid=3	// hard code to Sam Farrell
+}
+Set request.RelationshipClinician=uid //##Class(HS.Registry.Person.User).SessionUserClinician()
+Set tSC=##class(HS.Util.HubServices).InvokeHubService("HS.Hub.HSWS.WebServices","HS.Hub.HSWS.WebServicesClient","PatientListRequest",.list,request)
+Quit:$$$ISERR(tSC) tSC
+Quit list
+</csp:method>
+
+
+<csp:method name="recentList" classmethod="1" arguments="user" >
+Set request=##class(HS.Message.PatientListRequest).%New()
+Set request.ListType="recent"
+Set request.ListId="recent"
+set userID=" "_$Username
+
+Set uid=$Order(^["hsregistry"]HS.Registry.Person.UserI("UserID",userID,""))
+If ( uid="" ) {
+	Set uid=3	// hard code to Sam Farrell
+}
+Set request.RelationshipClinician=uid //##Class(HS.Registry.Person.User).SessionUserClinician()
+Set tSC=##class(HS.Util.HubServices).InvokeHubService("HS.Hub.HSWS.WebServices","HS.Hub.HSWS.WebServicesClient","PatientListRequest",.list,request)
+Quit:$$$ISERR(tSC) tSC
+Quit list
+</csp:method>
+<csp:method name="parseSearchQuery" classmethod="1" arguments="query,.parsed">
+// try to fidget out first/last name
+if ( $p(query,",",1) ? .N ) { // mpiid search
+ set parsed("MPIIDLIST")=$listfromstring(query)
+ merge ^foo("search.query",$ZTS)=parsed
+ quit
+}
+if ( $l(query,",")>1 ) {
+	set parsed("LastName")=$p(query,",",1)
+	set parsed("FirstName")=$p(query,",",2)
+} elseif ( $l(query," ") > 1 ) {
+	set parsed("FirstName")=$p(query," ",1)
+	set parsed("LastName")=$p(query," ",2)
+} else {
+	set parsed("LastName")=query
+}
+ merge ^foo("search.query",$ZTS)=parsed
+</csp:method>
+
+<csp:method name="getPatientRecords" classmethod="1" arguments="MPIID">
+Set tResponse=""
+Set tRequest=##class(HS.Message.PatientSearchRequest).%New()
+Set tRequest.MPIID=MPIID
+Set tRequest.AuthBy = "Patient" //$S(AuthByOther'="":AuthByOther,1:AuthByPatient)
+Set tRequest.SearchTimestamp = $ZDT($H,3)
+Set tRequest.SearchUser = $Username
+//***to do - how do we really want to audit this?
+/*
+Set tSC = ##Class(HS.Types.PatientInfo).CopyFrom(tRequest,.tPatientInfo) Quit:'tSC  //to get only the criteria
+Set tSC = tPatientInfo.XMLExportToString(.tCriteria,"Criteria","literal") Quit:'tSC
+Set tSC = $$$HSAuditPatientSearch(.tLog,tCriteria,tRequest.RequestingForProxyUserID) Quit:'tSC
+Set %session.Data("Audit","InitiatingLog") = tLog
+Set tRequest.RequestId = tLog
+*/
+Set tSC=##class(HS.Viewer.Services).SendSync(tRequest,.tResponse) Quit:$$$ISERR(tSC)
+Set %session.Data("SearchResponse")=tResponse.%Id()
+Set ^patientbox($Username,"SearchResponse")=tResponse.%Id()
+quit tResponse
+</csp:method>
+
+<csp:method name="search" classmethod="1" arguments="query">
+Set request=##class(HS.Message.PatientSearchRequest).%New()
+do ##class(csp.pb.utils).parseSearchQuery(query,.parsed)
+s prop=$order(parsed(""))
+while ( prop'="" ) { set $property(request,prop)=parsed(prop),prop=$order(parsed(prop)) }
+Set request.SearchMode="user"  //"admin"
+Set request.SearchUser = $Username
+Set request.AuthBy="Patient"
+Set request.Facility="PiedmontEMR"
+Set ns=$namespace
+Set sc=##class(HS.Viewer.Services).SendSync(request,.response)
+Quit:$$$ISERR(sc) sc
+Set %session.Data("SearchResponse")=response.%Id()
+Set ^patientbox($Username,"SearchResponse")=response.%Id()
+merge ^foo.session=%session.Data
+Quit response
+</csp:method>
+
+<csp:method name="getPatientInfo" classmethod="1" arguments="info">
+	merge ^goo.session=%session.Data
+	if ( $Data(%session.Data("SearchResponse") ) ) {
+	  set searchResp = ##class(HS.Message.PatientSearchResponse).%OpenId(%session.Data("SearchResponse"))
+	} else {
+	  set searchRespId=^patientbox($Username,"SearchResponse")
+	  set searchResp = ##class(HS.Message.PatientSearchResponse).%OpenId(searchRespId)
+	}
+	Set best=searchResp.MPIIDList.GetAt(info("SearchResultItem"))
+	
+	//set batch=##Class(HS.Message.PatientBatchFetchRequestAsync).%New()
+	
+	Set tSC=##Class(HS.Message.PatientBatchFetchRequestAsync).CopyFrom(best,.batch)
+        Set batch.AdditionalInfo=best.AdditionalInfo
+	Set batch.Addresses=best.Addresses
+	set batch.Telecoms=best.Telecoms
+	set batch.Identifiers=best.Identifiers
+	set batch.SessionId = %session.SessionId
+	//Set batch.RequestId=%session.Data("Audit","InitiatingLog")
+	Set batch.RequestingForProxyUserID=$G(%session.Data("ProxyUserID"))
+	Set batch.RequestingForProxyID=$G(%session.Data("ProxyID"))
+
+	if ( $isobject($g(%session)) ) {
+		set batch.SessionId = %session.SessionId
+		set batch.RequestId = batch.SessionId
+	} else {
+		set batch.SessionId=$i(^pb.session.count)
+		set batch.RequestId = batch.SessionId
+	}
+	//Set tBatch.RequestId=%session.Data("Audit","InitiatingLog")	
+	//Set tBatch.RequestingForProxyUserID=$G(%session.Data("ProxyUserID"))
+	//Set tBatch.RequestingForProxyID=$G(%session.Data("ProxyID"))
+	//If pViewOrSend="send" Set tBatch.AggregateOnly=1
+	//For tI=1:1:tSearchResponse.Results.Count() {
+	//for i=1:1:$ll(ids) {
+	//
+	//set request=##class(HS.Message.PatientFetchByIdRequest).%New()
+	set request = ##class(HS.Message.PatientFetchRequestAsync).%New()
+	set request.SearchMode="user"
+	set request.SearchUser=$Username
+	set request.AuthBy="Patient"
+	set request.MPIID=info("MPIID")  //$listget(ids,i)
+	//set request.PatientId=info("MRN") //"PiedmontEMR:"_info("MRN")  //$listget(ids,i)
+	set request.Facility="PiedmontEMR"
+	set request.AssigningAuthority="PiedmontEMR"
+	set request.Gateway=info("Gateway")
+	set request.MRN=info("MRN")        //"cd2dba20-6944-4faa-bedd-b63caf4beb5f"
+	Do batch.Requests.Insert(request)
+	//}
+	//Break
+	Set sc=##class(HS.Viewer.Services).SendSync(batch,.response) 
+	//Set sc=##class(HS.Viewer.Services).SendSync(request,.response) 
+	Quit:$$$ISERR(sc) sc
+	Quit response
+</csp:method>
+
+<csp:method name="getPatientData" classmethod="1" arguments="info">
+	Quit ..getPatientInfo(.info)
+</csp:method>
+
+<csp:method name="infoTypeHTML" classmethod="1" arguments="infoType,sda">
+	try {
+		Do $classmethod($classname(),"infoTypeHTML"_infoType,sda)
+	} catch (Exception) {
+		do ##class(csp.pb.utils).pbd(.Exception)
+		&html<
+		<li>#(infoType)# unable to render</li>
+		>
+	}
+
+</csp:method>
+
+<csp:method name="infoTypeHTMLPatient" classmethod="1" arguments="sda">
+	&html<
+	<li>
+	<h2>#(sda.Name.GivenName)# #(sda.Name.MiddleName)# #(sda.Name.FamilyName)#</h2>
+	<p><strong>#(sda.Name.DOB)#</strong> #(sda.Gender)# </p>
+	<p>#(sda.Name.MRN)#</p>
+	>
+	if ( sda.Addresses.Count() > 0 ) {
+		Set addr=sda.Addresses.GetAt(1)
+		&html<
+		<p> #(addr.Street)# #(addr.City)#,#(addr.State)# #(addr.Zip)# </p>
+		>
+	}
+	&html<
+	</li>
+	>
+</csp:method>
+<csp:method name="infoTypeHTMLAllergy" classmethod="1" arguments="sda">
+&html<
+<li>
+<h4>#(sda.Allergy.Code)# - #(sda.Allergy.Description)#</h4>
+<p> #(sda.DiscoveryTime)# </p>
+<span class="ui-li-count">
+#(sda.Severity.Description)# #(sda.Status)# 
+</span>
+</li>
+>
+</csp:method>
+<csp:method name="infoTypeHTMLDiagnosis" classmethod="1" arguments="sda">
+//do ##class(csp.pb.utils).pbd(.sda)
+set time=sda.IdentificationTime
+if ( time="" ) { set time=sda.EnteredOn }
+&html<
+<li>
+<h4>#(sda.Diagnosis.Code)# - #(sda.Diagnosis.Description)#</h4>
+<p> #(sda.DiagnosisType.Description)# #(time)# #(sda.Status.Description)# </p>
+</li>
+>
+</csp:method>
+<csp:method name="infoTypeHTMLMedication" classmethod="1" arguments="sda">
+&html<
+<li>
+<h4>#(sda.OrderItem.Code)#</h4> 
+<span class="ui-li-count">
+	<strong> #(sda.Frequency.Code)# #(sda.Duration.Code)# </stong>
+</span>
+<p>#(sda.FromTime)# - #(sda.ToTime)#</p>
+<p>#(sda.OrderedBy.Description)# </p>
+>
+//w "<pre>"
+//zw sda
+//w "</pre>"
+</csp:method>
+<csp:method name="infoTypeHTMLEncounter" classmethod="1" arguments="sda">
+Set accountNumber=sda.AccountNumber
+Set encounterNum = sda.EncounterNumber
+Set startTS=sda.FromTime
+Set endTS=sda.ToTime
+Set facility=sda.HealthCareFacility.Description
+Set docs=$lb("AttendingClinician","ConsultingClinician") 
+kill docInfo
+set nnn=sda.AdmittingClinician.Name
+set docInfo("AdmittingClinician",1)=sda.AdmittingClinician.Name.GivenName_" "_sda.AdmittingClinician.Name.MiddleName_" "_sda.AdmittingClinician.Name.FamilyName
+set docInfo("AdmittingClinician")=1
+for doci=1:1:$ll(docs) {
+  set doc=$lg(docs,doci)
+  set docNames=""  //$property(sda,doc)
+  set docListObj=$property(sda,doc_"s")
+  if ( '$isobject(docListObj) ) { continue }
+  for nnii=1:1:$method(docListObj,"Count") {
+    set name=$property($method(docListObj,"GetAt",nnii),"Name")
+    set docNames=docNames_" "_name.GivenName_" "_name.MiddleName_" "_name.FamilyName
+  }
+  set docInfo(doc)=docNames
+}
+&html<
+<li>
+Datetime: #(startTS)# - #(endTS)#  <br/>
+Account: #(accountNumber)# <br/>
+Encounter: #(encounterNum)# <br/>
+Facility: #(facility)# <br/>
+Admitting: #(docInfo("AdmittingClinician",1))# <br/>
+>
+for doci=1:1:$ll(docs) {
+  set doc=$lg(docs,doci)	
+  &html< #(doc)#: #(docInfo(doc))#  <br/>>
+	
+}
+&html<
+</li>
+>
+</csp:method>
+
+<csp:method name="infoTypeHTMLDocument" classmethod="1" arguments="sda">
+//do ##class(csp.pb.utils).pbd(.sda)
+set name=sda.DocumentName
+if ( name="" ) { set name="<i>No document name found</i>" }
+&html<
+<li>
+>
+if ( sda.DocumentURL'="" ) {
+  set up="/csp/healthshare/hsaccess/web/"  //"../../web/"
+  set durl=up_$p(sda.DocumentURL,"/",2,$length(sda.DocumentURL,"/"))
+  if ( "png,jpg"[$p(durl,".",$l(durl,".")) ) {
+   &html<
+   <a href="#" class="cars" id="#($tr(name," ","-"))#">
+   <img src="#(durl)#" width="350" height="350" />
+	<h2>#(name)#</h2>
+	<p>#(sda.EnteredOn)#</p>
+   </a>
+   >
+  } else {
+   &html<<iframe width="100%" height="200px" 
+         xframeBorder="0" src=#(durl)#></iframe>
+   >
+  }
+} else {
+ &html<<div style="border:1px solid black;padding:5px;margin:8px">
+	<h2>#(name)#</h2>
+	<p>#(sda.EnteredOn)#</p>
+	<pre>
+	#(sda.NoteText)#
+	</pre>
+	</div>
+  >
+}
+&html< </li> >
+</csp:method>
+<csp:method name="infoTypeHTMLLabOrder" classmethod="1" arguments="sda">
+// for each lab you have results
+set result=sda.Result
+&html<
+
+<li data-role="list-divider" role="heading" class="ui-li ui-li-divider ui-bar-e">
+<h5>#(sda.OrderItem.Description)#</h5> 
+<span class="ui-li-aside">
+	<strong> #(sda.EnteredOn)# #(result.ResultType)# </stong>
+</span>
+<p>Ordered by:#(sda.OrderedBy.Description)# </p>
+</li>
+<li>
+<table>
+ <thead>
+ </thead>
+ <tfoot> <tr> <td colspan="3">#(result.ResultItems.Count())# results.</td></tr></tfoot>
+ <tbody>
+>
+for i=1:1:result.ResultItems.Count() {
+	set ri=result.ResultItems.GetAt(i)
+	&html<
+	<tr>
+	<th scope="row">#(ri.TestItemCode.Description)#</th> 
+	<td>#(ri.ResultValue)#</td>
+	<td>#(ri.ResultValueUnits)#</td>
+	</tr>	
+	>
+}
+&html<
+ </tbody>
+  </table>
+</li>
+>
+</csp:method>
+
+
+<csp:method name="infoTypeHTMLObservation" classmethod="1" arguments="sdaIds,name">
+//w "<pre>"
+//zw sda
+//zw result
+w "</pre>"
+&html<
+<table summary="Table of observations">
+ <caption>Observations</caption>
+ <thead>
+  <tr>
+   <th scope="col">Item</th>
+   <th scope="col">Value</th>
+   <th scope="col">When</th>
+  </tr>
+ </thead>
+ <tfoot>
+   <tr>
+    <td colspan="3">Total: #($ll(sdaIds))# observations</td>
+   </tr>
+ </tfoot>
+ <tbody>
+>
+set chartId=$i(^patientbox.chartdata)
+for ii=1:1:$ll(sdaIds) {
+ Set sc=##class(HS.SDA3.Container).LoadSDAObject($lg(sdaIds,ii),.sdao)
+ set kind=sdao.ObservationCode.Description
+ set value=sdao.ObservationValue
+ set time=sdao.ObservationTime
+ set ^patientbox.chartdata(chartId,kind)=$g(^patientbox.chartdata(chartId,kind))_$lb($lb("'"_time_"'",value))
+ &html<
+ <tr>
+  <th scope="row">
+	<a href="chart.csp?ci=#(chartId)#&ct=#(kind)#&n=#(name)#" data-rel="dialog"> 
+	#(sdao.ObservationCode.Description)#
+        </a>
+  </th>
+  <td>#(sdao.ObservationValue)#</td>
+  <td>#(sdao.ObservationTime)#</td>
+ </tr>
+ >
+}
+&html<
+ </tbody>
+</table>
+>
+</csp:method>
+
+<csp:method name="getClinicianId" arguments="" classmethod="1">
+if ( $data(^patientbox.clincian($Username) ) ) {
+	quit ^patientbox.clinician($Username,"ID")
+}
+//Set sc=##Class(HS.Util.HubServices).InvokeHubService("HS.Push.WebServices","HS.Push.WebServicesClient","IdentifyClinician",.tClinicianId,##Class(HS.Util.Installer.ConfigItem).GetThisComponentName(),$UserName)
+Set tClinicianId=##class(HS.Registry.Person.User).SessionUserClinician()
+Set ^patientbox.clinician($Username,"ID")=tClinicianId  // cache
+Quit tClinicianId	
+</csp:method>
+<!-- message related utils -->
+<csp:method name="getFolderListWithCounts" arguments=".folders" classmethod="1">
+Set rs=##class(%ResultSet).%New("HS.Push.MessageCenter.Folder:ListFoldersWeb")
+set userID=" "_$zconvert($Username,"U")
+//Set uid=$Order(^["hsregistry"]HS.Registry.Person.UserI("UserID",userID,""))
+Set uid=##class(csp.pb.utils).getClinicianId()
+Set sc=rs.Execute(uid)
+while ( rs.Next() ) {
+	set id=rs.Data("ID"),name=rs.Data("FolderName"),type=rs.Data("FolderType")
+	set folders(name)=$lb(id,type)
+}
+// for each folder fetch the docs
+set name=$order(folders(""))
+while ( name'="" ) {
+	s rs2=##class(%ResultSet).%New("HS.Push.MessageCenter.Document:ListFolderDocumentsWeb")
+	set id=$lg(folders(name),1)
+	set sc=rs2.Execute(id,uid,"")
+	set mprops=$lb("ID","PatientName","Subject","ReceivedFrom","Subject","Received","UnRead")
+	while ( rs2.Next() ) {
+		kill msgData
+	 	for imp=1:1:$ll(mprops) {
+			set impp=$lg(mprops,imp)
+			set msgData(impp)=rs2.Data(impp)
+		}	
+		//zw msgData
+		merge folders(name,"msgs",$i(folders(name,"msgs")))=msgData
+	}
+	set name=$order(folders(name))
+}
+</csp:method>
+<csp:method name="getMessage" arguments="msgId,.msg" classmethod="1">
+IF msgId="" Quit "bad"  //should never happen
+//get doc info & folder
+#dim tInboxDoc As HS.Push.MessageCenter.Document
+Set sc=##Class(HS.Util.HubServices).InvokeHubService("HS.Push.WebServices","HS.Push.WebServicesClient","GetDocumentInfo",.tInboxDoc,msgId)
+If $$$ISERR(sc) Quit "bad "_$ZCVT($system.Status.GetErrorText(sc),"O","HTML")
+If '$IsObject(tInboxDoc) Quit "bad " //_$ZCVT($$$Text("Document Not Found"),"O","HTML")
+IF $ZCVT(tInboxDoc.Subscription.UserId,"U")'=$ZCVT($UserName,"U") {
+	//Set tSC=$$$HSError($$$HSErrUnauthorizedUser,pDocId)
+	Quit "bad "_$ZCVT($system.Status.GetErrorText(sc),"O","HTML")
+}
+//Set %session.Data("Repository")=tInboxDoc.RepositoryGWEndPoint
+//Set %session.Data("DocumentId")=tInboxDoc.DocumentId
+//Set %session.Data("FolderId")=tInboxDoc.FolderId
+//Set %session.Data("LastMPIID")=tInboxDoc.MPIID
+set ^patientbox.msgs(msgId,"LastMPIID")=tInboxDoc.MPIID
+set ^patientbox.msgs(msgId,"MRN")=tInboxDoc.MRN
+IF tInboxDoc.MPIID'="" {
+	Set tSC=##Class(HS.Hub.MPI.RecentViews).RecentSessionUpdateMPIID(tInboxDoc.MPIID)
+	If $$$ISERR(tSC) Quit "bad "_$ZCVT($system.Status.GetErrorText(tSC),"O","HTML")
+}
+/*
+Set tSC=..LoadAttachmentList(pDocId,tInboxDoc.DocumentId,tInboxDoc.RepositoryGWEndPoint)
+Quit:$$$ISERR(tSC) "bad "_$ZCVT($system.Status.GetErrorText(tSC),"O","HTML")
+Set tOK=..CallRegistryService("ReadFlag",.tResult,pDocId,0)
+IF tOK="bad" Quit "bad "_tResult
+Set %session.Data("LastViewerNameSpace")=$ZNSPACE
+Set %session.Data("ViewerRoles")=$Roles
+#; Set EventClass for Session Events
+Set %session.EventClass="" // turned off to avoid <protect> errors
+Set ..%GetComponentById("idRegistryDocId").value=pDocId
+//Do ..%EnableSendOn(1)
+Set ..%GetComponentById("idOpen").disabled = ..currentFolderType'="Drafts"
+Quit "ok"
+*/
+Quit tInboxDoc
+</csp:method>

@@ -1,0 +1,12 @@
+<csp:class super="%CSP.Page,csp.pb.template">
+<csp:method name="content" classmethod="1">
+//w "<pre>"
+//zw %request
+set q=%request.Get("search")
+&html<
+	<p>
+	Query=#(q)#
+	</p>
+
+>
+</csp:method>
